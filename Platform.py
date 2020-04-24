@@ -28,8 +28,8 @@ class Stock_Yahoo:
 
         #CHANGED (BRIAN): made self.prices a dict that maps datetime objects to prices
         self.prices = dict(
-                        zip(map(lambda x: dt.datetime.strptime(x, '%Y-%m-%d').date(), self.data['Date']),
-                            self.data['Adj Close'])
+                            zip(map(lambda x: dt.datetime.strptime(x, '%Y-%m-%d').date(), self.data['Date']),
+                                self.data['Adj Close'])
                         )
         self.start_price = self.prices[self.start_date]
 #         self.end_price = self.prices[self.end_date]
@@ -57,7 +57,7 @@ class Stock_Yahoo:
 
     def get_performance(self, start=None, end=None):
         #TODO: Implementation depends on how we choose to represent datetime
-        #TODO: Fix this thing
+        #TODO: Fix this thing, add holidays to daterange first
         if (start == None):
             start = self.start_date
         if (end == None):
