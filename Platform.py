@@ -3,6 +3,7 @@ import time
 import intrinio_sdk
 from intrinio_sdk.rest import ApiException
 from pprint import pprint
+import datetime as dt
 from datetime import date
 from datetime import timedelta
 import io
@@ -15,6 +16,7 @@ import pandas as pd
 import requests, lxml
 from lxml import html
 
+
 class Stock_Yahoo:
     def __init__(self, ticker, start_date=date.today(), end_date=date.today(), frequency='daily', page_size=100):
         self.ticker = ticker
@@ -23,10 +25,14 @@ class Stock_Yahoo:
         self.frequency = frequency
         self.data = self.get_clean_yahoo(ticker, start_date, end_date)
         self.date_range_iter = self.daterange(start_date, end_date)
-        self.prices = dict(zip(self.data['Date'], self.data['Adj Close']))
-        print(type(list(self.prices.keys())[0]))
-#         self.start_price = self.prices[]
-#         self.end_price = self.prices[-1]
+
+        #CHANGED (BRIAN): made self.prices a dict that maps datetime objects to prices
+        self.prices = dict(
+                        zip(map(lambda x: dt.datetime.strptime(x, '%Y-%m-%d').date(), self.data['Date']),
+                            self.data['Adj Close'])
+                        )
+        self.start_price = self.prices[self.start_date]
+#         self.end_price = self.prices[self.end_date]
 
     def get_clean_yahoo(self, ticker, start_date, end_date):
         start_date = int(time.mktime(start_date.timetuple()))
@@ -40,14 +46,18 @@ class Stock_Yahoo:
     def display_close_price(self):
         #TODO: add start and end date arguments that maybe default to the start and end date
         #TODO: decide to standardize between either datetime64ns or datetime objects
+            #chosen to have all dates in self.prices to be datetime objects
+        #TODO: maybe we should make our own datetime actually
         plt.figure(figsize=(10,7))
         plt.title(self.ticker + " Stock Price")
-        plt.plot(self.data['Date'].astype('datetime64[ns]'), list(self.prices.values()))
+        plt.plot(pd.to_datetime(self.data['Date']), list(self.prices.values()))
         plt.xlabel("Date")
         plt.ylabel("Price")
         plt.show()
 
     def get_performance(self, start=None, end=None):
+        #TODO: Implementation depends on how we choose to represent datetime
+        #TODO: Fix this thing
         if (start == None):
             start = self.start_date
         if (end == None):
@@ -56,7 +66,6 @@ class Stock_Yahoo:
         max_ind = len(self.prices)
         curr_ind = 0
         gains = []
-        print(list(self.daterange(self.start_date, self.end_date)))
         for date in self.daterange(start, end):
             if ((date - self.start_date).total_seconds() < 0):
                 gains.append(0)
@@ -70,6 +79,7 @@ class Stock_Yahoo:
         return np.array(gains)
 
     def daterange(self, start_date, end_date):
+        #TODO: need to implement holidays, maybe even historical holidays, not really sure
         delta = timedelta(days=1)
         while start_date <= end_date:
             if (start_date.weekday() >= 5):
