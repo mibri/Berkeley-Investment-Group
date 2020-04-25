@@ -18,12 +18,12 @@ from lxml import html
 
 
 class Stock_Yahoo:
-    def __init__(self, ticker, start_date=date.today(), end_date=date.today(), frequency='daily', page_size=100):
+    def __init__(self, ticker, start_date=dt.datetime.today().date(), end_date=dt.datetime.today().date(), frequency='daily', page_size=100):
         self.ticker = ticker
-        self.start_date = start_date
-        self.end_date = end_date
         self.frequency = frequency
-        self.data = self.get_clean_yahoo(ticker, start_date, end_date)
+        self.start_date = self.parse_date(start_date)
+        self.end_date = self.parse_date(end_date)
+        self.data = self.get_clean_yahoo()
         self.date_range_iter = self.daterange(start_date, end_date)
 
         #CHANGED (BRIAN): made self.prices a dict that maps datetime objects to prices
@@ -34,10 +34,42 @@ class Stock_Yahoo:
         self.start_price = self.prices[self.start_date]
 #         self.end_price = self.prices[self.end_date]
 
-    def get_clean_yahoo(self, ticker, start_date, end_date):
-        start_date = int(time.mktime(start_date.timetuple()))
-        end_date = int(time.mktime(end_date.timetuple()))
-        yahoo_url = "https://query1.finance.yahoo.com/v7/finance/download/"+ ticker + "?period1=" + str(start_date) + "&period2=" + str(end_date) + "&interval=1d&events=history"
+    def parse_date(self, date):
+        """ Parses string dates in format YYYY-MM-DD to datetime objects and adjusts them
+        based on frequency. """
+
+        """ TODO:
+        - Account for holidays
+        """
+        if not isinstance(date, dt.date):
+            date = dt.datetime.strptime(date, '%Y-%m-%d').date()
+
+        if self.frequency == 'daily':
+            day = date.weekday()
+            if day >= 5:
+                print('The day you chose is not a weekday.')
+                date -= timedelta(days=day - day%4)
+
+        elif self.frequency == 'weekly':
+            day = date.weekday()
+            if day > 0:
+                print('Weeks start on a Monday')
+                date -= timedelta(days=day)
+
+        elif self.frequency == 'monthly':
+            print('Month starts on the 1st')
+            date = date.replace(day=1)
+        return date
+
+    def get_clean_yahoo(self):
+        """ Creates the appropriate URL depending on ticker, frequency and dates """
+        time_period = {'daily': '1d', 'weekly': '1wk', 'monthly': '1mo'}
+        freq = time_period[self.frequency]
+        start_date = int(time.mktime(self.start_date.timetuple()))
+        end_date = int(time.mktime(self.end_date.timetuple()))
+        yahoo_url = "https://query1.finance.yahoo.com/v7/finance/download/"+ self.ticker + "?period1=" + str(start_date) + "&period2=" + str(end_date) + "&interval=" + \
+                    freq + "&events=history"
+#         print(yahoo_url)
         data = pd.read_csv(yahoo_url)
         # sort in ascending date
         data = data.reindex(index=data.index[::-1])
