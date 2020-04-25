@@ -26,7 +26,6 @@ class Stock_Yahoo:
         self.data = self.get_clean_yahoo()
         self.date_range_iter = self.daterange(start_date, end_date)
 
-        #CHANGED (BRIAN): made self.prices a dict that maps datetime objects to prices
         self.prices = dict(
                             zip(map(lambda x: dt.datetime.strptime(x, '%Y-%m-%d').date(), self.data['Date']),
                                 self.data['Adj Close'])
