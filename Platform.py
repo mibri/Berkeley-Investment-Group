@@ -12,12 +12,15 @@ import numpy as np
 from numpy import genfromtxt
 import matplotlib.pyplot as plt
 import pandas as pd
+import requests
 
 import requests, lxml
 from lxml import html
 
 
-class Stock_Yahoo:
+class Stock:
+    api_key = 'YnJpYW44ODIybWlAZ21haWwuY29t'
+    url = 'https://api.tenquant.io/'
     def __init__(self, ticker, start_date=dt.datetime.today().date(), end_date=dt.datetime.today().date(), frequency='daily', page_size=100):
         self.ticker = ticker
         self.frequency = frequency
@@ -86,6 +89,15 @@ class Stock_Yahoo:
         plt.ylabel("Price")
         plt.show()
 
+    def get_10k_data(self, end_date):
+        end_date_formatted = end_date.strftime('%Y%m%d')
+        print(end_date_formatted)
+        paramters = {'key': self.api_key, 'ticker': self.ticker, 'date': end_date_formatted}
+        r = requests.get(url=self.url + '/historical?ticker=' + self.ticker + '&date=' + end_date_formatted + '&key=' + self.api_key)
+        print(r)
+        data = r.json()
+        return data
+
     def get_performance(self, start=None, end=None):
         #TODO: Implementation depends on how we choose to represent datetime
         #TODO: Fix this thing, add holidays to daterange first
@@ -134,7 +146,7 @@ class Portfolio:
         self.holdings = {}
 
     def buy(self, ticker='', start=date.today(), end=date.today()):
-        newStock = Stock_Yahoo(ticker, start_date=start, end_date=end)
+        newStock = Stock(ticker, start_date=start, end_date=end)
         self.holdings[newStock] = (start, end)
 
     def display_performance(self):
